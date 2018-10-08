@@ -1,0 +1,4 @@
+usr/share/squid-ssl/icons
+usr/share/squid-ssl/mib.txt
+usr/share/squid-ssl/mime.conf
+etc/squid-ssl/squid.conf.documented /usr/share/doc/squid-ssl-common

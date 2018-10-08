@@ -1,0 +1,1 @@
+squid-ssl binary: setuid-binary usr/lib/squid-ssl/pinger-ssl 4755 root/root

@@ -1,0 +1,7 @@
+Tests: upstream-test-suite
+Depends: @builddeps@, fakeroot, squid
+Restrictions: allow-stderr
+
+Tests: squid
+Depends: squid, squidclient, elinks, netcat, pygopherd, apparmor-utils, vsftpd
+Restrictions: needs-root

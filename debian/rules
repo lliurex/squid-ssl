@@ -1,0 +1,103 @@
+#! /usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_CFLAGS_MAINT_APPEND = -Wall
+# see https://launchpad.net/bugs/1712668
+export DEB_CXXFLAGS_MAINT_APPEND = -Wno-error=deprecated -Wno-error=format-truncation
+export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+include /usr/share/dpkg/buildflags.mk
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/autotools.mk
+include /usr/share/dpkg/architecture.mk
+include /usr/share/cdbs/1/rules/autoreconf.mk
+
+INSTALLDIR := $(CURDIR)/debian/tmp
+datadir=/usr/share/squid-ssl
+
+DEB_DH_INSTALL_SOURCEDIR := $(INSTALLDIR)
+DEB_INSTALL_DOCS_squid-common := CONTRIBUTORS CREDITS QUICKSTART RELEASENOTES.html \
+						SPONSORS 
+
+DEB_CONFIGURE_EXTRA_FLAGS := BUILDCXXFLAGS="$(CXXFLAGS) $(LDFLAGS)" \
+		--program-suffix=-ssl \
+		--datadir=/usr/share/squid-ssl \
+		--sysconfdir=/etc/squid-ssl \
+		--libexecdir=/usr/lib/squid-ssl \
+		--mandir=/usr/share/man \
+		--enable-inline \
+		--disable-arch-native \
+		--enable-async-io=8 \
+		--enable-storeio="ufs,aufs,diskd,rock" \
+		--enable-removal-policies="lru,heap" \
+		--enable-delay-pools \
+		--enable-cache-digests \
+		--enable-icap-client \
+		--enable-follow-x-forwarded-for \
+		--enable-auth-basic="DB,fake,getpwnam,LDAP,NCSA,NIS,PAM,POP3,RADIUS,SASL,SMB" \
+		--enable-auth-digest="file,LDAP" \
+		--enable-auth-negotiate="kerberos,wrapper" \
+		--enable-auth-ntlm="fake,smb_lm" \
+		--enable-external-acl-helpers="file_userip,kerberos_ldap_group,LDAP_group,session,SQL_session,unix_group,wbinfo_group" \
+		--enable-url-rewrite-helpers="fake" \
+		--enable-eui \
+		--enable-esi \
+		--enable-icmp \
+		--enable-zph-qos \
+		--enable-ecap \
+		--enable-ssl-crtd \
+		--disable-translation \
+		--with-swapdir=/var/spool/squid-ssl \
+		--with-logdir=/var/log/squid-ssl \
+		--with-pidfile=/var/run/squid-ssl.pid \
+		--with-filedescriptors=65536 \
+		--with-large-files \
+		--with-default-user=proxy \
+		--with-openssl
+
+BUILDINFO := $(shell lsb_release -si 2>/dev/null)
+
+DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
+
+DEB_CONFIGURE_EXTRA_FLAGS += --enable-build-info="$(BUILDINFO) $(DEB_HOST_ARCH_OS)"
+
+ifeq ($(DEB_HOST_ARCH_OS), kfreebsd)
+		DEB_CONFIGURE_EXTRA_FLAGS += --enable-kqueue
+endif
+ifeq ($(DEB_HOST_ARCH_OS), linux)
+		DEB_CONFIGURE_EXTRA_FLAGS += --enable-linux-netfilter
+endif
+
+DEB_MAKE_CLEAN_TARGET = distclean
+
+DEB_FIXPERMS_EXCLUDE = /usr/lib/squid-ssl/pinger-ssl
+
+install/squid-ssl::
+	install -m 755 -g root -d $(INSTALLDIR)/usr/lib/cgi-bin
+	mv $(INSTALLDIR)/etc/squid-ssl/squid.conf.documented $(INSTALLDIR)/etc/squid-ssl/squid.conf
+	mv $(INSTALLDIR)/usr/lib/squid-ssl/cachemgr.cgi-ssl $(INSTALLDIR)/usr/lib/cgi-bin/cachemgr.cgi-ssl
+	install -m 755 -g root -d $(INSTALLDIR)/etc/init.d
+	install -m 755 -g root -d $(INSTALLDIR)/etc/logrotate.d
+	install -m 755 -g root -d $(INSTALLDIR)/etc/resolvconf
+	install -m 755 -g root -d $(INSTALLDIR)/etc/resolvconf/update-libc.d
+	install -m 755 -g root -d $(INSTALLDIR)/etc/ufw/applications.d
+	install -m 755 -g root debian/squid-ssl.rc $(INSTALLDIR)/etc/init.d/squid-ssl
+	install -m 755 -g root debian/squid-ssl.resolvconf $(INSTALLDIR)/etc/resolvconf/update-libc.d/squid-ssl
+	install -m 644 -g root debian/squid-ssl.logrotate $(INSTALLDIR)/etc/logrotate.d/squid-ssl
+	install -m 644 -g root debian/squid-ssl.ufw.profile $(INSTALLDIR)/etc/ufw/applications.d/squid-ssl
+	install -m 755 -g root -d debian/squid-ssl/var/log
+	install -m 755 -g root -d debian/squid-ssl/var/spool
+	install -m 755 -g root -d debian/squid-ssl/var/run
+	install -m 750 -o proxy -g proxy -d debian/squid-ssl/var/log/squid-ssl
+	install -m 750 -o proxy -g proxy -d debian/squid-ssl/var/spool/squid-ssl
+#	install -m 755 -g root -d $(INSTALLDIR)/usr/share/man/man1
+	mv $(INSTALLDIR)/usr/bin/purge-ssl $(INSTALLDIR)/usr/bin/squid-purge-ssl
+#	install -m 644 -g root debian/squid-ssl-purge.8  $(INSTALLDIR)/usr/share/man/man8
+	chmod 4755 $(INSTALLDIR)/usr/lib/squid-ssl/pinger-ssl
+	install -m 755 -g root -d $(INSTALLDIR)/etc/apparmor.d/force-complain
+	install -m 755 -g root -d $(INSTALLDIR)/etc/apparmor.d/disable
+	install -m 644 -g root debian/usr.sbin.squid-ssl $(INSTALLDIR)/etc/apparmor.d
+	dh_apparmor --profile-name=usr.sbin.squid-ssl -psquid
+
+clean::
+	# nothing to do

@@ -1,0 +1,42 @@
+# Author: Simon Deziel
+#         Jamie Strandboge
+# vim:syntax=apparmor
+#include <tunables/global>
+
+/usr/sbin/squid-ssl {
+  #include <abstractions/base>
+  #include <abstractions/kerberosclient>
+  #include <abstractions/nameservice>
+
+  capability net_raw,
+  capability setuid,
+  capability setgid,
+  capability sys_chroot,
+
+  # allow child processes to run execvp(argv[0], [kidname, ...])
+  /usr/sbin/squid-ssl ix,
+
+  # pinger
+  network inet raw,
+  network inet6 raw,
+
+  /etc/mtab r,
+  @{PROC}/[0-9]*/mounts r,
+  @{PROC}/mounts r,
+
+  # squid3 configuration
+  /etc/squid-ssl/** r,
+  /{,var/}run/squid-ssl.pid rwk,
+  /var/spool/squid-ssl/ r,
+  /var/spool/squid-ssl/** rwk,
+  /usr/lib/squid-ssl/* rmix,
+  /usr/share/squid-ssl/** r,
+  /var/log/squid-ssl/* rw,
+
+    # Site-specific additions and overrides. See local/README for details.
+    #include <local/usr.sbin.squid-ssl>
+  }
+
+  # Site-specific additions and overrides. See local/README for details.
+  #include <local/usr.sbin.squid-ssl>
+}
