@@ -97,7 +97,7 @@ install/squid-ssl::
 	install -m 755 -g root -d $(INSTALLDIR)/etc/apparmor.d/force-complain
 	install -m 755 -g root -d $(INSTALLDIR)/etc/apparmor.d/disable
 	install -m 644 -g root debian/usr.sbin.squid-ssl $(INSTALLDIR)/etc/apparmor.d
-	dh_apparmor --profile-name=usr.sbin.squid-ssl -psquid
+	dh_apparmor --profile-name=usr.sbin.squid-ssl -psquid-ssl
 
 clean::
 	# nothing to do
