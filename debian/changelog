@@ -1,3 +1,9 @@
+squid-ssl (3.5.27.2-lliurex2) xenial; urgency=medium
+
+  * Bionic release
+
+ -- Juanma Navarro Mañez <juanma1980@gmail.com>  Mon, 08 Oct 2018 12:10:35 +0200
+
 squid-ssl (3.5.12-2lliurex4) xenial; urgency=medium
 
   * Load iptables rules on startup
